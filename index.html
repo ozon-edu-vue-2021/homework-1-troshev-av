@@ -100,35 +100,22 @@
         const decrementStepHandler = function () {
             data.step -= 2;
         };
-        
-        const getSum = function () {
-            return data.counter + data.step;
-        };
 
-        /* При изменении любого значения обновляем на странице нужные элементы.
-         * У него есть 2 недостатка: 
-         * -- заранее определен перечень изменяемых элементов;
-         * -- при изменении одного значения, обновляем сразу все элементы.
-         * 
-         * Понимаю что можно реализовать через watcher функцию.
-         * Но мне показалось что копировать реализацию из интернета не правильно.
-         * Лучше такое, но своими руками и максимально простое.
-         */
-        const render = function () {
-            counterEl.textContent = data.counter;
-            stepEl.textContent = data.step;
-            sumEl.textContent = getSum();
-            // Тут могли быть и другие операции (вычитание/умножение)
-        };
-
-        const queue = [render];
+        let target;
+        const watcher = function (handler) {
+            target = handler;
+            handler();
+            target = null;
+        }
 
         Object.keys(data).forEach(key => {
             let value = data[key]; // data.counter, data.counter1, data.counter2
+            const queue = new Set();
             Object.defineProperty(data, key, {
                 get: function () {
                     console.log('get');
-                    // queue.push();
+                    if (target) queue.add(target);
+
                     return value;
                 },
                 set: function (newValue) {
@@ -139,7 +126,19 @@
             });
         });
 
-        render();
+        watcher(() => {
+            counterEl.textContent = data.counter;
+        });
+
+        watcher(() => {
+            stepEl.textContent = data.step;
+        });
+
+        watcher(() => {
+            sumEl.textContent = data.counter + data.step;
+        });
+
+        // Тут могли быть и другие операции (вычитание/умножение)
 
         buttonElCounterMinus.addEventListener('click', decrementCounterHandler);
         buttonElCounterPlus.addEventListener('click', incrementCounterHandler);
